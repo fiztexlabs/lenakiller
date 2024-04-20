@@ -6,9 +6,8 @@ import RGPPY as rgp
 
 class CoilHE:
     """
-    ===============================================
     Стационарная модель змеевикового теплообменника
-    ===============================================
+    ----------
 
     v0.1.1
     
@@ -243,7 +242,7 @@ class CoilHE:
             self.Pr_w_out_t[i] = rgp.rgpPRANDTLEPT(self.subst_out_t, self.P_out_t[i], self.Tw_out_t[i])
 
             self.u_in_t[i] = self.G_in_t_in*(1./self.D_in_t[i])/self.geometry["F_in_t"]
-            self.u_out_t[i] = self.G_out_t_in*(1./self.D_out_t[i])/self.geometry["F_in_t"]
+            self.u_out_t[i] = self.G_out_t_in*(1./self.D_out_t[i])/self.geometry["F_out_t"]
         
             self.Re_in_t[i] = self.u_in_t[i]*self.geometry["d_in_t"]/rgp.rgpKINVISPT(self.subst_in_t, self.P_in_t[i],self.Tf_in_t[i])
             self.Re_out_t[i] = self.u_out_t[i]*self.geometry["d_out_t"]/rgp.rgpKINVISPT(self.subst_out_t, self.P_out_t[i],self.Tf_out_t[i])
