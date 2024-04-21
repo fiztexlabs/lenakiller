@@ -10,7 +10,7 @@ rec = CoilHE(
     15.7e6,
     1.667,
     1.667,
-    500,
+    10,
     geometry={
         "d_in_t": 12.4e-3,
         "d_out_t": 16.e-3,
@@ -19,6 +19,8 @@ rec = CoilHE(
         "n_ryad_vert": 50,
         "a_avg": 4.,
         "D_avg": 0.25,
+        "L_t": 12.45,
+        "n_t": 44,
         "F_he_in_t": 22.283,
         "F_he_out_t": 28.752,
         "F_in_t": 0.0053135642,

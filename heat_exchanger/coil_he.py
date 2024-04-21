@@ -31,6 +31,8 @@ class CoilHE:
             n_ryad_vert (int): количество рядов в трубном пучке по вертикали
             a_avg (float): средний угол навивки змеевиков [град]
             D_avg (float): средний диаметр навивки змеевиков [м]
+            L_t (float): средняя длина трубок [м]
+            n_t (int): количество теплообменных трубок в пучке
             F_he_in_t (float): площадь теплообменной поверхности по внутритрубному пространству [м2]
             F_he_out_t (float): площадь теплообменной поверхности по межтрубному пространству [м2]
             F_in_t (float): площадь проходного сечения по внутритрубному пространству [м2]
@@ -69,6 +71,8 @@ class CoilHE:
                     "n_ryad_vert": int,
                     "a_avg": float,
                     "D_avg": float,
+                    "L_t": float,
+                    "n_t": int,
                     "F_he_in_t": float,
                     "F_he_out_t": float,
                     "F_in_t": float,
@@ -91,8 +95,10 @@ class CoilHE:
         self.__A__ = np.zeros([4*n_razb, 4*n_razb])
         self.__b__ = np.zeros(4*n_razb)
 
-        self.F_in_t = np.full(n_razb, geometry["F_he_in_t"]/n_razb)
-        self.F_out_t = np.full(n_razb, geometry["F_he_out_t"]/n_razb)
+        self.F_he_in_t = np.full(n_razb, geometry["F_he_in_t"]/n_razb)
+        self.F_he_out_t = np.full(n_razb, geometry["F_he_out_t"]/n_razb)
+
+        self.L_t = np.full(n_razb, geometry["L_t"]/n_razb)
         
         self.subst_in_t = 1 # H2O
         self.subst_out_t = 1 # H2O
@@ -150,25 +156,25 @@ class CoilHE:
             # уравнения (1) для ячеек
             if(i == 0): 
                 # противоток
-                self.__A__[i,i] = -(self.ALW_in_t[i]*self.F_in_t[i]*0.5 + self.G_in_t_in*self.Cp_in_t[i])
-                self.__b__[i] = -(self.G_in_t_in*self.Cp_in_t[i] - self.ALW_in_t[i]*self.F_in_t[i]*0.5)*self.T_in_t_in
+                self.__A__[i,i] = -(self.ALW_in_t[i]*self.F_he_in_t[i]*0.5 + self.G_in_t_in*self.Cp_in_t[i])
+                self.__b__[i] = -(self.G_in_t_in*self.Cp_in_t[i] - self.ALW_in_t[i]*self.F_he_in_t[i]*0.5)*self.T_in_t_in
             if(i != 0):
-                self.__A__[i,i-1] = self.G_in_t_in*self.Cp_in_t[i] - self.ALW_in_t[i]*self.F_in_t[i]*0.5
-                self.__A__[i,i] = -(self.ALW_in_t[i]*self.F_in_t[i]*0.5 + self.G_in_t_in*self.Cp_in_t[i])
+                self.__A__[i,i-1] = self.G_in_t_in*self.Cp_in_t[i] - self.ALW_in_t[i]*self.F_he_in_t[i]*0.5
+                self.__A__[i,i] = -(self.ALW_in_t[i]*self.F_he_in_t[i]*0.5 + self.G_in_t_in*self.Cp_in_t[i])
                 self.__b__[i] = 0.
-            self.__A__[i,i+2*self.n_razb] = self.ALW_in_t[i]*self.F_in_t[i]
+            self.__A__[i,i+2*self.n_razb] = self.ALW_in_t[i]*self.F_he_in_t[i]
 
         for i in range(self.n_razb):
             # уравнения (2) для ячеек
             if(i == self.n_razb-1):
                 # противоток
-                self.__A__[i+self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i] + self.ALW_out_t[i]*self.F_out_t[i]*0.5
-                self.__b__[i+self.n_razb] = -(self.ALW_out_t[i]*self.F_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i])*self.T_out_t_in
+                self.__A__[i+self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i] + self.ALW_out_t[i]*self.F_he_out_t[i]*0.5
+                self.__b__[i+self.n_razb] = -(self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i])*self.T_out_t_in
             if(i != self.n_razb-1):
-                self.__A__[i+self.n_razb,i+self.n_razb] = self.ALW_out_t[i]*self.F_out_t[i]*0.5 + self.G_out_t_in*self.Cp_out_t[i]
-                self.__A__[i+self.n_razb,i+self.n_razb+1] = self.ALW_out_t[i]*self.F_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i]
+                self.__A__[i+self.n_razb,i+self.n_razb] = self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 + self.G_out_t_in*self.Cp_out_t[i]
+                self.__A__[i+self.n_razb,i+self.n_razb+1] = self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i]
                 self.__b__[i+self.n_razb] = 0.
-            self.__A__[i+self.n_razb,i+3*self.n_razb] = -self.ALW_out_t[i]*self.F_out_t[i]
+            self.__A__[i+self.n_razb,i+3*self.n_razb] = -self.ALW_out_t[i]*self.F_he_out_t[i]
                 
         for i in range(self.n_razb):
             # уравнения (3) для ячеек
@@ -182,8 +188,8 @@ class CoilHE:
                 self.__A__[i+2*self.n_razb,i-1] = self.G_in_t_in*self.Cp_in_t[i]
                 self.__b__[i+2*self.n_razb] = 0.
 
-            self.__A__[i+2*self.n_razb,i+2*self.n_razb] = -self.__Xi__
-            self.__A__[i+2*self.n_razb,i+3*self.n_razb] = self.__Xi__
+            self.__A__[i+2*self.n_razb,i+2*self.n_razb] = -self.__Xi__*self.L_t[i]*self.geometry["n_t"]
+            self.__A__[i+2*self.n_razb,i+3*self.n_razb] = self.__Xi__*self.L_t[i]*self.geometry["n_t"]
 
         for i in range(self.n_razb):
             # уравнения (4) для ячеек
@@ -197,8 +203,8 @@ class CoilHE:
                 self.__A__[i+3*self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]
                 self.__b__[i+3*self.n_razb] = 0.
 
-            self.__A__[i+3*self.n_razb,i+2*self.n_razb] = -self.__Xi__
-            self.__A__[i+3*self.n_razb,i+3*self.n_razb] = self.__Xi__
+            self.__A__[i+3*self.n_razb,i+2*self.n_razb] = -self.__Xi__*self.L_t[i]*self.geometry["n_t"]
+            self.__A__[i+3*self.n_razb,i+3*self.n_razb] = self.__Xi__*self.L_t[i]*self.geometry["n_t"]
 
 
     def __calcstep__(self):
@@ -257,8 +263,8 @@ class CoilHE:
             
             self.Q_in_t[i] = self.G_in_t_in*self.Cp_in_t[i]*abs(self.Tf_f_in_t[i]-self.Tf_f_in_t[i+1])
             self.Q_out_t[i] = self.G_out_t_in*self.Cp_out_t[i]*abs(self.Tf_f_out_t[i]-self.Tf_f_out_t[i+1])
-            # self.Q_in_t[i] = abs(self.ALW_in_t[i]*self.F_in_t[i]*(self.Tw_in_t[i] - self.Tf_f_in_t[i]))
-            # self.Q_out_t[i] = abs(self.ALW_out_t[i]*self.F_out_t[i]*(self.Tw_out_t[i] - self.Tf_f_out_t[i]))
+            # self.Q_in_t[i] = abs(self.ALW_in_t[i]*self.F_he_in_t[i]*(self.Tw_in_t[i] - self.Tf_f_in_t[i]))
+            # self.Q_out_t[i] = abs(self.ALW_out_t[i]*self.F_he_out_t[i]*(self.Tw_out_t[i] - self.Tf_f_out_t[i]))
             
             self.ALW_out_t[i] = (self.lambda_f_out_t[i]/self.geometry["d_out_t"])*self.coil_Nu_out_t(
                 self.Re_out_t[i],
