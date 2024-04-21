@@ -253,20 +253,20 @@ class CoilHE:
             self.Re_in_t[i] = self.u_in_t[i]*self.geometry["d_in_t"]/rgp.rgpKINVISPT(self.subst_in_t, self.P_in_t[i],self.Tf_in_t[i])
             self.Re_out_t[i] = self.u_out_t[i]*self.geometry["d_out_t"]/rgp.rgpKINVISPT(self.subst_out_t, self.P_out_t[i],self.Tf_out_t[i])
 
-            self.ALW_in_t[i] = (self.lambda_f_in_t[i]/self.geometry["d_in_t"])*self.coil_Nu_in_t(
+            self.ALW_in_t[i] = (self.lambda_f_in_t[i]/self.geometry["d_in_t"])*self.coil_Nu_in_t_rev(
                 self.geometry["d_in_t"], 
                 self.geometry["D_avg"], 
                 self.Re_in_t[i],
                 self.Pr_f_in_t[i],
                 self.Pr_w_in_t[i],
-                self.Tf_in_t[-1]-self.Tf_in_t[0])
+                self.Tf_f_in_t[-1]-self.Tf_f_in_t[0])
             
             self.Q_in_t[i] = self.G_in_t_in*self.Cp_in_t[i]*abs(self.Tf_f_in_t[i]-self.Tf_f_in_t[i+1])
             self.Q_out_t[i] = self.G_out_t_in*self.Cp_out_t[i]*abs(self.Tf_f_out_t[i]-self.Tf_f_out_t[i+1])
             # self.Q_in_t[i] = abs(self.ALW_in_t[i]*self.F_he_in_t[i]*(self.Tw_in_t[i] - self.Tf_f_in_t[i]))
             # self.Q_out_t[i] = abs(self.ALW_out_t[i]*self.F_he_out_t[i]*(self.Tw_out_t[i] - self.Tf_f_out_t[i]))
             
-            self.ALW_out_t[i] = (self.lambda_f_out_t[i]/self.geometry["d_out_t"])*self.coil_Nu_out_t(
+            self.ALW_out_t[i] = (self.lambda_f_out_t[i]/self.geometry["d_out_t"])*self.coil_Nu_out_t_rev(
                 self.Re_out_t[i],
                 self.Pr_f_out_t[i],
                 self.geometry["a_avg"],
@@ -287,7 +287,7 @@ class CoilHE:
             Err = abs(Ql-Qn)/Qn
     
 
-    def coil_Nu_out_t(self, Re: float, Pr: float, a: float, n_cols: int):
+    def coil_Nu_out_t_rev(self, Re: float, Pr: float, a: float, n_cols: int):
         """
         Критерий Нуссельта по межтрубному пространству (обтекание змеевикового пучка труб РТМ 108.031.05-84)
                 
@@ -349,7 +349,7 @@ class CoilHE:
 
         return Nu
 
-    def coil_Nu_in_t(self, d: float, D: float, Re: float, Pr_f: float, Pr_w: float, dT: float):
+    def coil_Nu_in_t_rev(self, d: float, D: float, Re: float, Pr_f: float, Pr_w: float, dT: float):
         """
         Критерий Нуссельта для течения внутри змеевиков (РТМ 108.031.05-84)
 
