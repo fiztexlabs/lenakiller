@@ -2,6 +2,7 @@ import numpy as np
 from math import *
 from scipy import linalg
 import RGPPY as rgp
+from dataclasses import dataclass
 
 
 class CoilHE:
@@ -10,7 +11,7 @@ class CoilHE:
     ----------
 
     v0.1.1
-    
+
     Arguments
     ----------
     lambda_w (float): Теплопроводность стенки теплообменных трубок [Вт/м]
@@ -38,12 +39,12 @@ class CoilHE:
             F_in_t (float): площадь проходного сечения по внутритрубному пространству [м2]
             F_out_t (float): площадь теплообменной поверхности по межтрубному пространству [м2]
         }
-    
+
     Attributes
     ----------
     subst_in_t: Объект для расчета свойств среды в внутритрубном пространстве
     subst_out_t: Объект для расчета свойств среды в межтрубном пространстве
-    
+
     Methods
     ----------
 
@@ -52,35 +53,36 @@ class CoilHE:
 
        evaluate - make next timestep for ejector model
     """
+
     def __init__(
-                self,
-                lambda_w: float,
-                T_in_t_in: float,
-                T_out_t_in: float,
-                P_in_t_in: float,
-                P_out_t_in: float,
-                G_in_t_in: float,
-                G_out_t_in: float,
-                n_razb: int,
-                mode = 1,
-                geometry = {
-                    "d_in_t": float,
-                    "d_out_t": float,
-                    "s_hor": float,
-                    "s_vert": float,
-                    "n_ryad_vert": int,
-                    "a_avg": float,
-                    "D_avg": float,
-                    "L_t": float,
-                    "n_t": int,
-                    "F_he_in_t": float,
-                    "F_he_out_t": float,
-                    "F_in_t": float,
-                    "F_out_t": float
-                },
-                alw_in_t = 4.5e3,
-                alw_out_t = 5.5e3,
-            ):
+        self,
+        lambda_w: float,
+        T_in_t_in: float,
+        T_out_t_in: float,
+        P_in_t_in: float,
+        P_out_t_in: float,
+        G_in_t_in: float,
+        G_out_t_in: float,
+        n_razb: int,
+        mode=1,
+        geometry={
+            "d_in_t": float,
+            "d_out_t": float,
+            "s_hor": float,
+            "s_vert": float,
+            "n_ryad_vert": int,
+            "a_avg": float,
+            "D_avg": float,
+            "L_t": float,
+            "n_t": int,
+            "F_he_in_t": float,
+            "F_he_out_t": float,
+            "F_in_t": float,
+            "F_out_t": float
+        },
+        alw_in_t=4.5e3,
+        alw_out_t=5.5e3,
+    ):
         self.geometry = geometry
         self.lambda_w = lambda_w
         self.T_in_t_in = T_in_t_in
@@ -99,46 +101,59 @@ class CoilHE:
         self.F_he_out_t = np.full(n_razb, geometry["F_he_out_t"]/n_razb)
 
         self.L_t = np.full(n_razb, geometry["L_t"]/n_razb)
-        
-        self.subst_in_t = 1 # H2O
-        self.subst_out_t = 1 # H2O
+
+        self.subst_in_t = 1  # H2O
+        self.subst_out_t = 1  # H2O
 
         self.Tf_f_in_t = np.full(n_razb+1, T_in_t_in)
         self.Tf_in_t = np.full(n_razb, T_in_t_in)
         self.Tf_f_out_t = np.full(n_razb+1, T_out_t_in)
         self.Tf_out_t = np.full(n_razb, T_out_t_in)
-        
+
         self.Tw_in_t = np.full(n_razb, T_in_t_in)
         self.Tw_out_t = np.full(n_razb, T_out_t_in)
 
         self.P_in_t = np.full(n_razb, P_in_t_in)
         self.P_out_t = np.full(n_razb, P_out_t_in)
 
-        self.Pr_f_in_t = np.full(n_razb, rgp.rgpPRANDTLEPT(self.subst_in_t, P_in_t_in,T_in_t_in))
-        self.Pr_f_out_t = np.full(n_razb, rgp.rgpPRANDTLEPT(self.subst_out_t, P_out_t_in,T_out_t_in))
+        self.Pr_f_in_t = np.full(n_razb, rgp.rgpPRANDTLEPT(
+            self.subst_in_t, P_in_t_in, T_in_t_in))
+        self.Pr_f_out_t = np.full(n_razb, rgp.rgpPRANDTLEPT(
+            self.subst_out_t, P_out_t_in, T_out_t_in))
 
-        self.lambda_f_in_t = np.full(n_razb, rgp.rgpTHERMCONDPT(self.subst_in_t, P_in_t_in,T_in_t_in))
-        self.lambda_f_out_t = np.full(n_razb, rgp.rgpTHERMCONDPT(self.subst_out_t, P_out_t_in,T_out_t_in))
-        
+        self.lambda_f_in_t = np.full(n_razb, rgp.rgpTHERMCONDPT(
+            self.subst_in_t, P_in_t_in, T_in_t_in))
+        self.lambda_f_out_t = np.full(n_razb, rgp.rgpTHERMCONDPT(
+            self.subst_out_t, P_out_t_in, T_out_t_in))
+
         self.Pr_w_in_t = self.Pr_f_in_t
         self.Pr_w_out_t = self.Pr_f_out_t
 
-        self.Cp_in_t = np.full(n_razb, rgp.rgpCPPT(self.subst_in_t, P_in_t_in, T_in_t_in))
-        self.Cp_out_t = np.full(n_razb, rgp.rgpCPPT(self.subst_out_t, P_out_t_in, T_out_t_in))
-        
-        self.D_in_t = np.full(n_razb, rgp.rgpDPT(self.subst_in_t, P_in_t_in, T_in_t_in))
-        self.D_out_t = np.full(n_razb, rgp.rgpDPT(self.subst_out_t, P_out_t_in, T_out_t_in))
+        self.Cp_in_t = np.full(n_razb, rgp.rgpCPPT(
+            self.subst_in_t, P_in_t_in, T_in_t_in))
+        self.Cp_out_t = np.full(n_razb, rgp.rgpCPPT(
+            self.subst_out_t, P_out_t_in, T_out_t_in))
+
+        self.D_in_t = np.full(n_razb, rgp.rgpDPT(
+            self.subst_in_t, P_in_t_in, T_in_t_in))
+        self.D_out_t = np.full(n_razb, rgp.rgpDPT(
+            self.subst_out_t, P_out_t_in, T_out_t_in))
 
         self.ALW_in_t = np.full(n_razb, alw_in_t)
         self.ALW_out_t = np.full(n_razb, alw_out_t)
 
-        u_in = G_in_t_in*rgp.rgpVPT(self.subst_in_t, P_in_t_in, T_in_t_in)/geometry["F_in_t"]
-        u_out = G_out_t_in*rgp.rgpVPT(self.subst_out_t, P_out_t_in, T_out_t_in)/geometry["F_out_t"]
+        u_in = G_in_t_in*rgp.rgpVPT(self.subst_in_t,
+                                    P_in_t_in, T_in_t_in)/geometry["F_in_t"]
+        u_out = G_out_t_in * \
+            rgp.rgpVPT(self.subst_out_t, P_out_t_in,
+                       T_out_t_in)/geometry["F_out_t"]
         self.u_in_t = np.full(n_razb, u_in)
         self.u_out_t = np.full(n_razb, u_out)
-        
-        self.Re_in_t = np.full(n_razb, u_in*geometry["d_in_t"]/rgp.rgpKINVISPT(self.subst_in_t, P_in_t_in, T_in_t_in))
-        self.Re_out_t = np.full(n_razb, u_out*geometry["d_out_t"]/rgp.rgpKINVISPT(self.subst_out_t, P_out_t_in, T_out_t_in))
+
+        self.Re_in_t = np.full(
+            n_razb, u_in*geometry["d_in_t"]/rgp.rgpKINVISPT(self.subst_in_t, P_in_t_in, T_in_t_in))
+        self.Re_out_t = np.full(
+            n_razb, u_out*geometry["d_out_t"]/rgp.rgpKINVISPT(self.subst_out_t, P_out_t_in, T_out_t_in))
 
         self.Q_in_t = np.zeros(n_razb)
         self.Q_out_t = np.zeros(n_razb)
@@ -146,66 +161,87 @@ class CoilHE:
         self.Q_he_in_t = 0.
         self.Q_he_out_t = 0.
 
-        self.__Xi__ = 2*pi*self.lambda_w/log(self.geometry["d_out_t"]/self.geometry["d_in_t"])
-    
+        self.__Xi__ = 2*pi*self.lambda_w / \
+            log(self.geometry["d_out_t"]/self.geometry["d_in_t"])
+
     def __linearize__(self):
         """
         Линеаризация уравнений сохранения энергии и построение матриц коэффициентов __A__ and __b__
         """
         for i in range(self.n_razb):
             # уравнения (1) для ячеек
-            if(i == 0): 
+            if (i == 0):
                 # противоток
-                self.__A__[i,i] = -(self.ALW_in_t[i]*self.F_he_in_t[i]*0.5 + self.G_in_t_in*self.Cp_in_t[i])
-                self.__b__[i] = -(self.G_in_t_in*self.Cp_in_t[i] - self.ALW_in_t[i]*self.F_he_in_t[i]*0.5)*self.T_in_t_in
-            if(i != 0):
-                self.__A__[i,i-1] = self.G_in_t_in*self.Cp_in_t[i] - self.ALW_in_t[i]*self.F_he_in_t[i]*0.5
-                self.__A__[i,i] = -(self.ALW_in_t[i]*self.F_he_in_t[i]*0.5 + self.G_in_t_in*self.Cp_in_t[i])
+                self.__A__[i, i] = -(self.ALW_in_t[i]*self.F_he_in_t[i]
+                                     * 0.5 + self.G_in_t_in*self.Cp_in_t[i])
+                self.__b__[i] = -(self.G_in_t_in*self.Cp_in_t[i] -
+                                  self.ALW_in_t[i]*self.F_he_in_t[i]*0.5)*self.T_in_t_in
+            if (i != 0):
+                self.__A__[i, i-1] = self.G_in_t_in*self.Cp_in_t[i] - \
+                    self.ALW_in_t[i]*self.F_he_in_t[i]*0.5
+                self.__A__[i, i] = -(self.ALW_in_t[i]*self.F_he_in_t[i]
+                                     * 0.5 + self.G_in_t_in*self.Cp_in_t[i])
                 self.__b__[i] = 0.
-            self.__A__[i,i+2*self.n_razb] = self.ALW_in_t[i]*self.F_he_in_t[i]
+            self.__A__[i, i+2*self.n_razb] = self.ALW_in_t[i]*self.F_he_in_t[i]
 
         for i in range(self.n_razb):
             # уравнения (2) для ячеек
-            if(i == self.n_razb-1):
+            if (i == self.n_razb-1):
                 # противоток
-                self.__A__[i+self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i] + self.ALW_out_t[i]*self.F_he_out_t[i]*0.5
-                self.__b__[i+self.n_razb] = -(self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i])*self.T_out_t_in
-            if(i != self.n_razb-1):
-                self.__A__[i+self.n_razb,i+self.n_razb] = self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 + self.G_out_t_in*self.Cp_out_t[i]
-                self.__A__[i+self.n_razb,i+self.n_razb+1] = self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i]
+                self.__A__[i+self.n_razb, i+self.n_razb] = self.G_out_t_in * \
+                    self.Cp_out_t[i] + self.ALW_out_t[i]*self.F_he_out_t[i]*0.5
+                self.__b__[i+self.n_razb] = -(self.ALW_out_t[i]*self.F_he_out_t[i]
+                                              * 0.5 - self.G_out_t_in*self.Cp_out_t[i])*self.T_out_t_in
+            if (i != self.n_razb-1):
+                self.__A__[i+self.n_razb, i+self.n_razb] = self.ALW_out_t[i] * \
+                    self.F_he_out_t[i]*0.5 + self.G_out_t_in*self.Cp_out_t[i]
+                self.__A__[i+self.n_razb, i+self.n_razb+1] = self.ALW_out_t[i] * \
+                    self.F_he_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i]
                 self.__b__[i+self.n_razb] = 0.
-            self.__A__[i+self.n_razb,i+3*self.n_razb] = -self.ALW_out_t[i]*self.F_he_out_t[i]
-                
+            self.__A__[i+self.n_razb, i+3*self.n_razb] = - \
+                self.ALW_out_t[i]*self.F_he_out_t[i]
+
         for i in range(self.n_razb):
             # уравнения (3) для ячеек
-            if(i == 0): 
+            if (i == 0):
                 # противоток
-                self.__A__[i+2*self.n_razb,i] = -self.G_in_t_in*self.Cp_in_t[i]
-                self.__b__[i+2*self.n_razb] = -self.G_in_t_in*self.Cp_in_t[i]*self.T_in_t_in
+                self.__A__[i+2*self.n_razb, i] = - \
+                    self.G_in_t_in*self.Cp_in_t[i]
+                self.__b__[i+2*self.n_razb] = -self.G_in_t_in * \
+                    self.Cp_in_t[i]*self.T_in_t_in
 
-            if(i != 0):
-                self.__A__[i+2*self.n_razb,i] = -self.G_in_t_in*self.Cp_in_t[i]
-                self.__A__[i+2*self.n_razb,i-1] = self.G_in_t_in*self.Cp_in_t[i]
+            if (i != 0):
+                self.__A__[i+2*self.n_razb, i] = - \
+                    self.G_in_t_in*self.Cp_in_t[i]
+                self.__A__[i+2*self.n_razb, i -
+                           1] = self.G_in_t_in*self.Cp_in_t[i]
                 self.__b__[i+2*self.n_razb] = 0.
 
-            self.__A__[i+2*self.n_razb,i+2*self.n_razb] = -self.__Xi__*self.L_t[i]*self.geometry["n_t"]
-            self.__A__[i+2*self.n_razb,i+3*self.n_razb] = self.__Xi__*self.L_t[i]*self.geometry["n_t"]
+            self.__A__[i+2*self.n_razb, i+2*self.n_razb] = - \
+                self.__Xi__*self.L_t[i]*self.geometry["n_t"]
+            self.__A__[i+2*self.n_razb, i+3*self.n_razb] = self.__Xi__ * \
+                self.L_t[i]*self.geometry["n_t"]
 
         for i in range(self.n_razb):
             # уравнения (4) для ячеек
-            if(i == self.n_razb-1): 
+            if (i == self.n_razb-1):
                 # противоток
-                self.__A__[i+3*self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]
-                self.__b__[i+3*self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]*self.T_out_t_in
-                
-            if(i != self.n_razb-1):
-                self.__A__[i+3*self.n_razb,i+self.n_razb+1] = -self.G_out_t_in*self.Cp_out_t[i]
-                self.__A__[i+3*self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]
+                self.__A__[i+3*self.n_razb, i +
+                           self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]
+                self.__b__[i+3*self.n_razb] = self.G_out_t_in * \
+                    self.Cp_out_t[i]*self.T_out_t_in
+
+            if (i != self.n_razb-1):
+                self.__A__[i+3*self.n_razb, i+self.n_razb+1] = - \
+                    self.G_out_t_in*self.Cp_out_t[i]
+                self.__A__[i+3*self.n_razb, i +
+                           self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]
                 self.__b__[i+3*self.n_razb] = 0.
 
-            self.__A__[i+3*self.n_razb,i+2*self.n_razb] = -self.__Xi__*self.L_t[i]*self.geometry["n_t"]
-            self.__A__[i+3*self.n_razb,i+3*self.n_razb] = self.__Xi__*self.L_t[i]*self.geometry["n_t"]
-
+            self.__A__[i+3*self.n_razb, i+2*self.n_razb] = - \
+                self.__Xi__*self.L_t[i]*self.geometry["n_t"]
+            self.__A__[i+3*self.n_razb, i+3*self.n_razb] = self.__Xi__ * \
+                self.L_t[i]*self.geometry["n_t"]
 
     def __calcstep__(self):
         """
@@ -216,14 +252,16 @@ class CoilHE:
         results = linalg.solve(self.__A__, self.__b__)
 
         # обновление температур
-        self.Tf_f_in_t = np.concatenate((np.array([self.T_in_t_in]), results[0:self.n_razb]), axis=0)
-        self.Tf_f_out_t = np.concatenate((results[self.n_razb:2*self.n_razb], np.array([self.T_out_t_in])), axis=0)
+        self.Tf_f_in_t = np.concatenate(
+            (np.array([self.T_in_t_in]), results[0:self.n_razb]), axis=0)
+        self.Tf_f_out_t = np.concatenate(
+            (results[self.n_razb:2*self.n_razb], np.array([self.T_out_t_in])), axis=0)
         self.Tw_in_t = results[2*self.n_razb:3*self.n_razb]
         self.Tw_out_t = results[3*self.n_razb:4*self.n_razb]
 
-        for i in range(1,self.n_razb+1):
-                self.Tf_in_t[i-1] = 0.5*(self.Tf_f_in_t[i]+self.Tf_f_in_t[i-1])
-                self.Tf_out_t[i-1] = 0.5*(self.Tf_f_out_t[i]+self.Tf_f_out_t[i-1])
+        for i in range(1, self.n_razb+1):
+            self.Tf_in_t[i-1] = 0.5*(self.Tf_f_in_t[i]+self.Tf_f_in_t[i-1])
+            self.Tf_out_t[i-1] = 0.5*(self.Tf_f_out_t[i]+self.Tf_f_out_t[i-1])
 
         # print(self.Tf_in_t)
         # print(self.Tw_in_t)
@@ -232,40 +270,58 @@ class CoilHE:
 
         # обновление зависимых величин
         for i in range(self.n_razb):
-            self.Cp_in_t[i] = rgp.rgpCPPT(self.subst_in_t, self.P_in_t[i], self.Tf_in_t[i])
-            self.Cp_out_t[i] = rgp.rgpCPPT(self.subst_out_t, self.P_out_t[i], self.Tf_out_t[i])
+            self.Cp_in_t[i] = rgp.rgpCPPT(
+                self.subst_in_t, self.P_in_t[i], self.Tf_in_t[i])
+            self.Cp_out_t[i] = rgp.rgpCPPT(
+                self.subst_out_t, self.P_out_t[i], self.Tf_out_t[i])
 
-            self.D_in_t[i] = rgp.rgpDPT(self.subst_in_t, self.P_in_t[i], self.Tf_in_t[i])
-            self.D_out_t[i] = rgp.rgpDPT(self.subst_out_t, self.P_out_t[i], self.Tf_out_t[i])
+            self.D_in_t[i] = rgp.rgpDPT(
+                self.subst_in_t, self.P_in_t[i], self.Tf_in_t[i])
+            self.D_out_t[i] = rgp.rgpDPT(
+                self.subst_out_t, self.P_out_t[i], self.Tf_out_t[i])
 
-            self.Pr_f_in_t[i] = rgp.rgpPRANDTLEPT(self.subst_in_t, self.P_in_t[i], self.Tf_in_t[i])
-            self.Pr_f_out_t[i] = rgp.rgpPRANDTLEPT(self.subst_out_t, self.P_out_t[i], self.Tf_out_t[i])
-            
-            self.lambda_f_in_t[i] = rgp.rgpTHERMCONDPT(self.subst_in_t, self.P_in_t[i], self.Tf_in_t[i])
-            self.lambda_f_out_t[i] = rgp.rgpTHERMCONDPT(self.subst_out_t, self.P_out_t[i], self.Tf_out_t[i])
+            self.Pr_f_in_t[i] = rgp.rgpPRANDTLEPT(
+                self.subst_in_t, self.P_in_t[i], self.Tf_in_t[i])
+            self.Pr_f_out_t[i] = rgp.rgpPRANDTLEPT(
+                self.subst_out_t, self.P_out_t[i], self.Tf_out_t[i])
 
-            self.Pr_w_in_t[i] = rgp.rgpPRANDTLEPT(self.subst_in_t, self.P_in_t[i], self.Tw_in_t[i])
-            self.Pr_w_out_t[i] = rgp.rgpPRANDTLEPT(self.subst_out_t, self.P_out_t[i], self.Tw_out_t[i])
+            self.lambda_f_in_t[i] = rgp.rgpTHERMCONDPT(
+                self.subst_in_t, self.P_in_t[i], self.Tf_in_t[i])
+            self.lambda_f_out_t[i] = rgp.rgpTHERMCONDPT(
+                self.subst_out_t, self.P_out_t[i], self.Tf_out_t[i])
 
-            self.u_in_t[i] = self.G_in_t_in*(1./self.D_in_t[i])/self.geometry["F_in_t"]
-            self.u_out_t[i] = self.G_out_t_in*(1./self.D_out_t[i])/self.geometry["F_out_t"]
-        
-            self.Re_in_t[i] = self.u_in_t[i]*self.geometry["d_in_t"]/rgp.rgpKINVISPT(self.subst_in_t, self.P_in_t[i],self.Tf_in_t[i])
-            self.Re_out_t[i] = self.u_out_t[i]*self.geometry["d_out_t"]/rgp.rgpKINVISPT(self.subst_out_t, self.P_out_t[i],self.Tf_out_t[i])
+            self.Pr_w_in_t[i] = rgp.rgpPRANDTLEPT(
+                self.subst_in_t, self.P_in_t[i], self.Tw_in_t[i])
+            self.Pr_w_out_t[i] = rgp.rgpPRANDTLEPT(
+                self.subst_out_t, self.P_out_t[i], self.Tw_out_t[i])
+
+            self.u_in_t[i] = self.G_in_t_in * \
+                (1./self.D_in_t[i])/self.geometry["F_in_t"]
+            self.u_out_t[i] = self.G_out_t_in * \
+                (1./self.D_out_t[i])/self.geometry["F_out_t"]
+
+            self.Re_in_t[i] = self.u_in_t[i]*self.geometry["d_in_t"] / \
+                rgp.rgpKINVISPT(self.subst_in_t,
+                                self.P_in_t[i], self.Tf_in_t[i])
+            self.Re_out_t[i] = self.u_out_t[i]*self.geometry["d_out_t"] / \
+                rgp.rgpKINVISPT(self.subst_out_t,
+                                self.P_out_t[i], self.Tf_out_t[i])
 
             self.ALW_in_t[i] = (self.lambda_f_in_t[i]/self.geometry["d_in_t"])*self.coil_Nu_in_t_rev(
-                self.geometry["d_in_t"], 
-                self.geometry["D_avg"], 
+                self.geometry["d_in_t"],
+                self.geometry["D_avg"],
                 self.Re_in_t[i],
                 self.Pr_f_in_t[i],
                 self.Pr_w_in_t[i],
                 self.Tf_f_in_t[-1]-self.Tf_f_in_t[0])
-            
-            self.Q_in_t[i] = self.G_in_t_in*self.Cp_in_t[i]*abs(self.Tf_f_in_t[i]-self.Tf_f_in_t[i+1])
-            self.Q_out_t[i] = self.G_out_t_in*self.Cp_out_t[i]*abs(self.Tf_f_out_t[i]-self.Tf_f_out_t[i+1])
+
+            self.Q_in_t[i] = self.G_in_t_in*self.Cp_in_t[i] * \
+                abs(self.Tf_f_in_t[i]-self.Tf_f_in_t[i+1])
+            self.Q_out_t[i] = self.G_out_t_in*self.Cp_out_t[i] * \
+                abs(self.Tf_f_out_t[i]-self.Tf_f_out_t[i+1])
             # self.Q_in_t[i] = abs(self.ALW_in_t[i]*self.F_he_in_t[i]*(self.Tw_in_t[i] - self.Tf_f_in_t[i]))
             # self.Q_out_t[i] = abs(self.ALW_out_t[i]*self.F_he_out_t[i]*(self.Tw_out_t[i] - self.Tf_f_out_t[i]))
-            
+
             self.ALW_out_t[i] = (self.lambda_f_out_t[i]/self.geometry["d_out_t"])*self.coil_Nu_out_t_rev(
                 self.Re_out_t[i],
                 self.Pr_f_out_t[i],
@@ -276,7 +332,6 @@ class CoilHE:
         self.Q_he_in_t = np.sum(self.Q_in_t)
         self.Q_he_out_t = np.sum(self.Q_out_t)
 
-
     def evaluate(self):
         Err = 1.
         while Err > 0.001:
@@ -285,12 +340,11 @@ class CoilHE:
             Qn = self.Q_he_out_t
 
             Err = abs(Ql-Qn)/Qn
-    
 
     def coil_Nu_out_t_rev(self, Re: float, Pr: float, a: float, n_cols: int):
         """
         Критерий Нуссельта по межтрубному пространству (обтекание змеевикового пучка труб РТМ 108.031.05-84)
-                
+
         Arguments
         ----------
         Re (float): Критерий Рейнольдса
@@ -311,7 +365,7 @@ class CoilHE:
         if (2.e5 < Re):
             c = 0.02
             n = 0.84
-        
+
         Nu0 = c*(Re**n)*(Pr**0.36)
 
         Cz = np.interp(
@@ -342,7 +396,7 @@ class CoilHE:
                 0.99801587,
                 1,
             ])
-        
+
         Cf = sqrt(sin(radians(a)))
 
         Nu = Nu0*Cz*Cf
@@ -380,8 +434,7 @@ class CoilHE:
             else:
                 # охлаждение теплоносителя
                 C = 1 - 0.3 * exp(-0.015*d/D)
-        
+
         Nu = C*Nu0
 
         return Nu
-

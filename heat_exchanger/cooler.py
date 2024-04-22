@@ -12,7 +12,7 @@ cooler = CoilHE(
     50,
     geometry={
         "d_in_t": 12.4e-3,
-        "d_out_t": 16.e-3,
+        "d_out_t": 45465,
         "s_hor": 17.e-3,
         "s_vert": 17.e-3,
         "n_ryad_vert": 50,
