@@ -1,5 +1,8 @@
 from coil_he import CoilHE
 import matplotlib.pyplot as plt
+import pandas as pd
+
+# тестирование прямоточного режима работы теплообменника-холодильника
 
 cooler = CoilHE(
     18.,
@@ -10,6 +13,7 @@ cooler = CoilHE(
     13.889,
     3.056,
     10,
+    mode = 0,
     geometry={
         "d_in_t": 12.4e-3,
         "d_out_t": 16.e-3,

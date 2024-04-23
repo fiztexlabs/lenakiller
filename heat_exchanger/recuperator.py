@@ -31,6 +31,7 @@ rec = CoilHE(
 rec.evaluate()
 
 print("Total power "+str(rec.Q_he_in_t*1.e-3)+" kWt")
+print("")
 plt.plot(rec.Tf_in_t - 273.15)
 plt.plot(rec.Tf_out_t - 273.15)
 plt.xlabel("участки")

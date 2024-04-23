@@ -63,7 +63,7 @@ class CoilHE:
                 G_out_t_in: float,
                 n_razb: int,
                 mode = 1,
-                geometry = {
+                geometry: dict = {
                     "d_in_t": float,
                     "d_out_t": float,
                     "s_hor": float,
@@ -165,15 +165,28 @@ class CoilHE:
             self.__A__[i,i+2*self.n_razb] = self.ALW_in_t[i]*self.F_he_in_t[i]
 
         for i in range(self.n_razb):
-            # уравнения (2) для ячеек
-            if(i == self.n_razb-1):
+            if self.mode == 1:
                 # противоток
-                self.__A__[i+self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i] + self.ALW_out_t[i]*self.F_he_out_t[i]*0.5
-                self.__b__[i+self.n_razb] = -(self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i])*self.T_out_t_in
-            if(i != self.n_razb-1):
-                self.__A__[i+self.n_razb,i+self.n_razb] = self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 + self.G_out_t_in*self.Cp_out_t[i]
-                self.__A__[i+self.n_razb,i+self.n_razb+1] = self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i]
-                self.__b__[i+self.n_razb] = 0.
+                # уравнения (2) для ячеек (противоток)
+                if(i == self.n_razb-1):
+                    # противоток
+                    self.__A__[i+self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i] + self.ALW_out_t[i]*self.F_he_out_t[i]*0.5
+                    self.__b__[i+self.n_razb] = -(self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i])*self.T_out_t_in
+                if(i != self.n_razb-1):
+                    self.__A__[i+self.n_razb,i+self.n_razb] = self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 + self.G_out_t_in*self.Cp_out_t[i]
+                    self.__A__[i+self.n_razb,i+self.n_razb+1] = self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i]
+                    self.__b__[i+self.n_razb] = 0.
+            if self.mode == 0:
+                # прямоток
+                # уравнения (6) для ячеек (прямоток)
+                if(i == 0):
+                    # прямоток
+                    self.__A__[i+self.n_razb,i+self.n_razb] = self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 + self.G_out_t_in*self.Cp_out_t[i]
+                    self.__b__[i+self.n_razb] = -(self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i])*self.T_out_t_in
+                if(i != 0):
+                    self.__A__[i+self.n_razb,i+self.n_razb-1] = self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 - self.G_out_t_in*self.Cp_out_t[i]
+                    self.__A__[i+self.n_razb,i+self.n_razb] = self.ALW_out_t[i]*self.F_he_out_t[i]*0.5 + self.G_out_t_in*self.Cp_out_t[i]
+                    self.__b__[i+self.n_razb] = 0.
             self.__A__[i+self.n_razb,i+3*self.n_razb] = -self.ALW_out_t[i]*self.F_he_out_t[i]
                 
         for i in range(self.n_razb):
@@ -192,16 +205,30 @@ class CoilHE:
             self.__A__[i+2*self.n_razb,i+3*self.n_razb] = self.__Xi__*self.L_t[i]*self.geometry["n_t"]
 
         for i in range(self.n_razb):
-            # уравнения (4) для ячеек
-            if(i == self.n_razb-1): 
+            if self.mode == 1:
                 # противоток
-                self.__A__[i+3*self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]
-                self.__b__[i+3*self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]*self.T_out_t_in
-                
-            if(i != self.n_razb-1):
-                self.__A__[i+3*self.n_razb,i+self.n_razb+1] = -self.G_out_t_in*self.Cp_out_t[i]
-                self.__A__[i+3*self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]
-                self.__b__[i+3*self.n_razb] = 0.
+                # уравнения (4) для ячеек
+                if(i == self.n_razb-1): 
+                    # противоток
+                    self.__A__[i+3*self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]
+                    self.__b__[i+3*self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]*self.T_out_t_in
+
+                if(i != self.n_razb-1):
+                    self.__A__[i+3*self.n_razb,i+self.n_razb+1] = -self.G_out_t_in*self.Cp_out_t[i]
+                    self.__A__[i+3*self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]
+                    self.__b__[i+3*self.n_razb] = 0.
+            if self.mode == 0:
+                # прямоток
+                # уравнения (8) для ячеек
+                if(i == 0): 
+                    # прямоток
+                    self.__A__[i+3*self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]
+                    self.__b__[i+3*self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]*self.T_out_t_in
+
+                if(i != 0):
+                    self.__A__[i+3*self.n_razb,i+self.n_razb] = self.G_out_t_in*self.Cp_out_t[i]
+                    self.__A__[i+3*self.n_razb,i+self.n_razb-1] = -self.G_out_t_in*self.Cp_out_t[i]
+                    self.__b__[i+3*self.n_razb] = 0.
 
             self.__A__[i+3*self.n_razb,i+2*self.n_razb] = -self.__Xi__*self.L_t[i]*self.geometry["n_t"]
             self.__A__[i+3*self.n_razb,i+3*self.n_razb] = self.__Xi__*self.L_t[i]*self.geometry["n_t"]
@@ -217,7 +244,12 @@ class CoilHE:
 
         # обновление температур
         self.Tf_f_in_t = np.concatenate((np.array([self.T_in_t_in]), results[0:self.n_razb]), axis=0)
-        self.Tf_f_out_t = np.concatenate((results[self.n_razb:2*self.n_razb], np.array([self.T_out_t_in])), axis=0)
+        if self.mode == 1:
+            # противоток
+            self.Tf_f_out_t = np.concatenate((results[self.n_razb:2*self.n_razb], np.array([self.T_out_t_in])), axis=0)
+        if self.mode == 0:
+            # прямоток
+            self.Tf_f_out_t = np.concatenate((np.array([self.T_out_t_in]), results[self.n_razb:2*self.n_razb]), axis=0)
         self.Tw_in_t = results[2*self.n_razb:3*self.n_razb]
         self.Tw_out_t = results[3*self.n_razb:4*self.n_razb]
 
@@ -299,6 +331,8 @@ class CoilHE:
         n_cols (int): Число поперечно обтекаемых рядов
         """
 
+        Re = abs(Re)
+
         if ((0. < Re) and (Re <= 40.)):
             c = 0.9
             n = 0.4
@@ -362,6 +396,8 @@ class CoilHE:
         Pr_w (float): Критерий Прандтля при температуре стенки
         dT (float): Признак режима теплообмена (при dT > 0 считается, что теплоноситель в трубах нагревается, а при dT > 0 - что охлаждается)
         """
+
+        Re = abs(Re)
 
         Re_cr = 2.e4*(d/D)**0.32
         Dn = Re*sqrt(d/D)

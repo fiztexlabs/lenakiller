@@ -2,6 +2,7 @@ from coil_he import CoilHE
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Исследование режимов работы теплообменнике
 
 rec_detail = CoilHE(
     18.,
@@ -60,6 +61,7 @@ rec_avg.evaluate()
 
 print("Total power (5 sections) "+str(rec_detail.Q_he_in_t*1.e-3)+" kWt")
 print("Total power (1 sections) "+str(rec_avg.Q_he_in_t*1.e-3)+" kWt")
+print("")
 plt.plot(rec_detail.ALW_in_t)
 plt.plot(np.full(6, rec_avg.ALW_in_t))
 plt.plot(
