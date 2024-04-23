@@ -1,6 +1,5 @@
 from coil_he import CoilHE
 import matplotlib.pyplot as plt
-import pandas as pd
 
 # тестирование прямоточного режима работы теплообменника-холодильника
 

@@ -10,6 +10,7 @@ cooler = CoilHE(
     13.889,
     3.056,
     10,
+    mode = 0,
     geometry={
         "d_in_t": 12.4e-3,
         "d_out_t": 16.e-3,
