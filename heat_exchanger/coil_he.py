@@ -293,17 +293,18 @@ class CoilHE:
                 self.Pr_w_in_t[i],
                 self.Tf_f_in_t[-1]-self.Tf_f_in_t[0])
             
-            self.Q_in_t[i] = self.G_in_t_in*self.Cp_in_t[i]*abs(self.Tf_f_in_t[i]-self.Tf_f_in_t[i+1])
-            self.Q_out_t[i] = self.G_out_t_in*self.Cp_out_t[i]*abs(self.Tf_f_out_t[i]-self.Tf_f_out_t[i+1])
-            # self.Q_in_t[i] = abs(self.ALW_in_t[i]*self.F_he_in_t[i]*(self.Tw_in_t[i] - self.Tf_f_in_t[i]))
-            # self.Q_out_t[i] = abs(self.ALW_out_t[i]*self.F_he_out_t[i]*(self.Tw_out_t[i] - self.Tf_f_out_t[i]))
-            
             self.ALW_out_t[i] = (self.lambda_f_out_t[i]/self.geometry["d_out_t"])*self.coil_Nu_out_t_rev(
                 self.Re_out_t[i],
                 self.Pr_f_out_t[i],
                 self.geometry["a_avg"],
                 self.geometry["n_ryad_vert"]
             )
+            
+            self.Q_in_t[i] = self.G_in_t_in*self.Cp_in_t[i]*abs(self.Tf_f_in_t[i]-self.Tf_f_in_t[i+1])
+            self.Q_out_t[i] = self.G_out_t_in*self.Cp_out_t[i]*abs(self.Tf_f_out_t[i]-self.Tf_f_out_t[i+1])
+
+            # self.Q_in_t[i] = abs(self.ALW_in_t[i]*self.F_he_in_t[i]*(self.Tw_in_t[i] - self.Tf_in_t[i]))
+            # self.Q_out_t[i] = abs(self.ALW_out_t[i]*self.F_he_out_t[i]*(self.Tw_out_t[i] - self.Tf_out_t[i]))
 
         self.Q_he_in_t = np.sum(self.Q_in_t)
         self.Q_he_out_t = np.sum(self.Q_out_t)
@@ -377,7 +378,7 @@ class CoilHE:
                 1,
             ])
         
-        Cf = sqrt(sin(radians(a)))
+        Cf = sqrt(sin(radians(90. - a)))
 
         Nu = Nu0*Cz*Cf
 
